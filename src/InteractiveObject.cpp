@@ -174,18 +174,45 @@ namespace object_definer {
     return m_imMarker.name;
   }
   
-  void InteractiveObject::addMenuEntry(std::string strLabel, std::string strIdentifier, std::string strParameter) {
+  unsigned int InteractiveObject::addMenuEntry(std::string strLabel, std::string strIdentifier, std::string strParameter, unsigned int unParentID) {
     InteractiveMenuEntry imeEntry;
     imeEntry.strLabel = strLabel;
     imeEntry.strIdentifier = strIdentifier;
     imeEntry.strParameter = strParameter;
+    imeEntry.unParentID = unParentID;
     
-    interactive_markers::MenuHandler::EntryHandle entEntry = m_mhMenu.insert(strLabel, boost::bind(&InteractiveObject::clickCallback, this, _1));
+    interactive_markers::MenuHandler::EntryHandle entEntry;
+    
+    if(imeEntry.unParentID == 0) {
+      entEntry = m_mhMenu.insert(strLabel, boost::bind(&InteractiveObject::clickCallback, this, _1));
+    } else {
+      entEntry = m_mhMenu.insert(imeEntry.unParentID, strLabel, boost::bind(&InteractiveObject::clickCallback, this, _1));
+    }
+    
     m_mhMenu.setCheckState(entEntry, interactive_markers::MenuHandler::NO_CHECKBOX);
     
     imeEntry.unMenuEntryID = entEntry;
     
     m_lstMenuEntries.push_back(imeEntry);
+    
+    if(m_imsServer) {
+      this->insertIntoServer(m_imsServer);
+    }
+    
+    return imeEntry.unMenuEntryID;
+  }
+  
+  void InteractiveObject::setMenuCheckBox(unsigned int unMenuEntry, int nState) {
+    interactive_markers::MenuHandler::CheckState csState;
+    switch(nState) {
+    case 0: csState = interactive_markers::MenuHandler::UNCHECKED; break;
+    case 1: csState = interactive_markers::MenuHandler::CHECKED; break;
+      
+    default:
+    case -1: csState = interactive_markers::MenuHandler::NO_CHECKBOX; break;
+    }
+    
+    m_mhMenu.setCheckState(unMenuEntry, csState);
     
     if(m_imsServer) {
       this->insertIntoServer(m_imsServer);
@@ -217,7 +244,7 @@ namespace object_definer {
     }
     
     for(InteractiveMenuEntry imeEntry : m_lstMenuEntries) {
-      interactive_markers::MenuHandler::EntryHandle entEntry = m_mhMenu.insert(imeEntry.strLabel, boost::bind(&InteractiveObject::clickCallback, this, _1));
+      interactive_markers::MenuHandler::EntryHandle entEntry = m_mhMenu.insert(imeEntry.unParentID, imeEntry.strLabel, boost::bind(&InteractiveObject::clickCallback, this, _1));
       m_mhMenu.setCheckState(entEntry, interactive_markers::MenuHandler::NO_CHECKBOX);
     }
     
@@ -239,10 +266,14 @@ namespace object_definer {
     return lstResults;
   }
   
-  void InteractiveObject::changeControl(unsigned int unInteractionMode) {
+  void InteractiveObject::changeControlMode(unsigned int unInteractionMode) {
     m_unInteractionMode = unInteractionMode;
     
     this->insertIntoServer(m_imsServer);
+  }
+  
+  unsigned int InteractiveObject::controlMode() {
+    return m_unInteractionMode;
   }
   
   void InteractiveObject::subscribeToPoseUpdate(std::string strFeedbackNode) {
@@ -255,5 +286,19 @@ namespace object_definer {
 	this->setPose(feedback.pose, false);
       }
     }
+  }
+  
+  InteractiveMenuEntry InteractiveObject::menuEntry(std::string strIdentifier, std::string strParameter) {
+    InteractiveMenuEntry imeReturn;
+    
+    for(InteractiveMenuEntry imeCurrent : m_lstMenuEntries) {
+      if(imeCurrent.strIdentifier == strIdentifier && imeCurrent.strParameter == strParameter) {
+	imeReturn = imeCurrent;
+	
+	break;
+      }
+    }
+    
+    return imeReturn;
   }
 }

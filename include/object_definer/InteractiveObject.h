@@ -59,6 +59,7 @@ namespace object_definer {
     std::string strIdentifier;
     std::string strParameter;
     uint8_t unMenuEntryID;
+    uint8_t unParentID;
   } InteractiveMenuEntry;
   
   typedef struct {
@@ -102,16 +103,20 @@ namespace object_definer {
     float height();
     
     std::string name();
-    void addMenuEntry(std::string strLabel, std::string strIdentifier, std::string strParameter = "");
+    unsigned int addMenuEntry(std::string strLabel, std::string strIdentifier, std::string strParameter = "", unsigned int unParentID = 0);
     void removeMenuEntry(std::string strIdentifier, std::string strParameter = "");
+    void setMenuCheckBox(unsigned int unMenuEntry, int nState);
     void clearMenuEntries();
     
     std::list<InteractiveObjectCallbackResult> callbackResults();
     
-    void changeControl(unsigned int unInteractionMode);
+    void changeControlMode(unsigned int unInteractionMode);
+    unsigned int controlMode();
     
     void subscribeToPoseUpdate(std::string strFeedbackNode);
     void poseUpdateCallback(const visualization_msgs::InteractiveMarkerFeedback feedback);
+    
+    InteractiveMenuEntry menuEntry(std::string strIdentifier, std::string strParameter = "");
   };
 }
 

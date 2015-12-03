@@ -72,6 +72,19 @@ unsigned int controlMode(std::string strIdentifier) {
 }
 
 
+std::string controlModeString(unsigned int unMode) {
+  switch(unMode) {
+  case visualization_msgs::InteractiveMarkerControl::MOVE_AXIS: return "MOVE_AXIS"; break;
+  case visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS: return "ROTATE_AXIS"; break;
+  case visualization_msgs::InteractiveMarkerControl::MOVE_PLANE: return "MOVE_PLANE"; break;
+  case visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE: return "MOVE_ROTATE"; break;
+  case visualization_msgs::InteractiveMarkerControl::MOVE_3D: return "MOVE_3D"; break;
+  case visualization_msgs::InteractiveMarkerControl::ROTATE_3D: return "ROTATE_3D"; break;
+  case visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D: return "MOVE_ROTATE_3D"; break;
+  };
+}
+
+
 std::shared_ptr<object_definer::InteractiveObject> loadObject(std::string strObjectOWLFile) {
   std::shared_ptr<object_definer::InteractiveObject> ioObject = std::make_shared<object_definer::InteractiveObject>("object");
   
@@ -150,15 +163,17 @@ std::shared_ptr<object_definer::InteractiveObject> makeHandle(std::string strHan
   
   ioHandleNew->setPose("object", psPose);
   ioHandleNew->addMenuEntry("Remove", "remove_handle", strHandleName);
-  ioHandleNew->addMenuEntry("Control: MOVE_AXIS", "change_control_mode", "MOVE_AXIS");
-  ioHandleNew->addMenuEntry("Control: ROTATE_AXIS", "change_control_mode", "ROTATE_AXIS");
-  ioHandleNew->addMenuEntry("Control: MOVE_PLANE", "change_control_mode", "MOVE_PLANE");
-  ioHandleNew->addMenuEntry("Control: MOVE_ROTATE", "change_control_mode", "MOVE_ROTATE");
-  ioHandleNew->addMenuEntry("Control: MOVE_3D", "change_control_mode", "MOVE_3D");
-  ioHandleNew->addMenuEntry("Control: ROTATE_3D", "change_control_mode", "ROTATE_3D");
-  ioHandleNew->addMenuEntry("Control: MOVE_ROTATE_3D", "change_control_mode", "MOVE_ROTATE_3D");
+  unsigned int unControlMode = ioHandleNew->addMenuEntry("Control Mode", "control_mode_menu");
+  ioHandleNew->addMenuEntry("Move Axis", "change_control_mode", "MOVE_AXIS", unControlMode);
+  ioHandleNew->addMenuEntry("Rotate Axis", "change_control_mode", "ROTATE_AXIS", unControlMode);
+  ioHandleNew->addMenuEntry("Move Plane", "change_control_mode", "MOVE_PLANE", unControlMode);
+  ioHandleNew->addMenuEntry("Move/Rotate", "change_control_mode", "MOVE_ROTATE", unControlMode);
+  ioHandleNew->addMenuEntry("Move 3D", "change_control_mode", "MOVE_3D", unControlMode);
+  ioHandleNew->addMenuEntry("Rotate 3D", "change_control_mode", "ROTATE_3D", unControlMode);
+  ioHandleNew->addMenuEntry("Move/Rotate 3D", "change_control_mode", "MOVE_ROTATE_3D", unControlMode);
   
-  ioHandleNew->changeControl(controlMode("MOVE_AXIS"));
+  ioHandleNew->changeControlMode(controlMode("MOVE_AXIS"));
+  ioHandleNew->setMenuCheckBox(ioHandleNew->menuEntry("change_control_mode", "MOVE_AXIS").unMenuEntryID, 1);
   
   return ioHandleNew;
 }
@@ -319,7 +334,10 @@ int main(int argc, char** argv) {
 	      }
 	    }
 	  } else if(iocrResult.strCommand == "change_control_mode") {
-	    ioHandle->changeControl(controlMode(iocrResult.strParameter));
+	    ioHandle->setMenuCheckBox(ioHandle->menuEntry(iocrResult.strCommand, controlModeString(ioHandle->controlMode())).unMenuEntryID, -1);
+	    ioHandle->changeControlMode(controlMode(iocrResult.strParameter));
+	    
+	    ioHandle->setMenuCheckBox(ioHandle->menuEntry(iocrResult.strCommand, iocrResult.strParameter).unMenuEntryID, 1);
 	  }
 	}
 	
