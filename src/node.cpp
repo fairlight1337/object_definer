@@ -53,6 +53,26 @@
 #include <object_definer/OwlIndividual.h>
 
 
+unsigned int shape(std::string strShape) {
+  if(strShape == "cube") {
+    return visualization_msgs::Marker::CUBE;
+  } else if(strShape == "sphere") {
+    return visualization_msgs::Marker::SPHERE;
+  } else if(strShape == "cylinder") {
+    return visualization_msgs::Marker::CYLINDER;
+  }
+}
+
+
+std::string shapeString(unsigned int unShape) {
+  switch(unShape) {
+  case visualization_msgs::Marker::CUBE: return "cube"; break;
+  case visualization_msgs::Marker::SPHERE: return "sphere"; break;
+  case visualization_msgs::Marker::CYLINDER: return "cylinder"; break;
+  };
+}
+
+
 unsigned int controlMode(std::string strIdentifier) {
   if(strIdentifier == "MOVE_AXIS") {
     return visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
@@ -120,8 +140,18 @@ std::shared_ptr<object_definer::InteractiveObject> loadObject(std::string strObj
   psPose.orientation.w = 1;
   
   ioObject->setPose("object", psPose);
+  
   ioObject->addMenuEntry("Add new handle", "add_handle");
-  ioObject->addMenuEntry("Export to OWL", "export", "owl");
+  
+  unsigned int unShape = ioObject->addMenuEntry("Shape", "shape_menu");
+  ioObject->addMenuEntry("Cube", "change_shape", "cube", unShape);
+  ioObject->addMenuEntry("Sphere", "change_shape", "sphere", unShape);
+  ioObject->addMenuEntry("Cylinder", "change_shape", "cylinder", unShape);
+  
+  unsigned int unExport = ioObject->addMenuEntry("Export", "export_menu");
+  ioObject->addMenuEntry("OWL (" + ioObject->name() + ".owl)", "export", "owl", unExport);
+  
+  ioObject->setMenuCheckBox(ioObject->menuEntry("change_shape", "cube").unMenuEntryID, 1);
   
   return ioObject;
 }
@@ -314,6 +344,11 @@ int main(int argc, char** argv) {
 	    ofOWL << strFile;
 	    ofOWL.close();
 	  }
+	} else if(iocrResult.strCommand == "change_shape") {
+	  ioObject->setMenuCheckBox(ioObject->menuEntry(iocrResult.strCommand, shapeString(ioObject->shape())).unMenuEntryID, -1);
+	  ioObject->setShape(shape(iocrResult.strParameter));
+	  
+	  ioObject->setMenuCheckBox(ioObject->menuEntry(iocrResult.strCommand, iocrResult.strParameter).unMenuEntryID, 1);
 	}
       }
       

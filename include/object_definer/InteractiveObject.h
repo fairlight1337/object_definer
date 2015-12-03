@@ -73,6 +73,7 @@ namespace object_definer {
     ros::NodeHandle m_nhHandle;
     ros::Subscriber m_subPoseUpdate;
     unsigned int m_unInteractionMode;
+    unsigned int m_unShape;
     visualization_msgs::Marker m_mkrMarker;
     interactive_markers::MenuHandler m_mhMenu;
     visualization_msgs::InteractiveMarker m_imMarker;
@@ -117,6 +118,9 @@ namespace object_definer {
     void poseUpdateCallback(const visualization_msgs::InteractiveMarkerFeedback feedback);
     
     InteractiveMenuEntry menuEntry(std::string strIdentifier, std::string strParameter = "");
+    
+    void setShape(unsigned int unShape);
+    unsigned int shape();
   };
 }
 

@@ -41,14 +41,12 @@
 
 
 namespace object_definer {
-  InteractiveObject::InteractiveObject(std::string strName) : m_unInteractionMode(visualization_msgs::InteractiveMarkerControl::BUTTON) {
-    m_imsServer = NULL;
-    
+  InteractiveObject::InteractiveObject(std::string strName) : m_unInteractionMode(visualization_msgs::InteractiveMarkerControl::BUTTON), m_unShape(visualization_msgs::Marker::CUBE) {
     m_imMarker.header.frame_id = "/map";
     m_imMarker.scale = 1;
     m_imMarker.name = strName;
     
-    m_mkrMarker.type = visualization_msgs::Marker::CUBE;
+    m_mkrMarker.type = m_unShape;
     m_mkrMarker.scale.x = m_imMarker.scale * 0.45;
     m_mkrMarker.scale.y = m_imMarker.scale * 0.45;
     m_mkrMarker.scale.z = m_imMarker.scale * 0.45;
@@ -300,5 +298,18 @@ namespace object_definer {
     }
     
     return imeReturn;
+  }
+  
+  void InteractiveObject::setShape(unsigned int unShape) {
+    m_unShape = unShape;
+    m_mkrMarker.type = m_unShape;
+    
+    if(m_imsServer) {
+      this->insertIntoServer(m_imsServer);
+    }
+  }
+  
+  unsigned int InteractiveObject::shape() {
+    return m_unShape;
   }
 }
