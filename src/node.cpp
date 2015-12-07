@@ -53,6 +53,11 @@
 #include <object_definer/OwlIndividual.h>
 
 
+// Global variables
+std::map<std::shared_ptr<object_definer::InteractiveObject>, std::string> g_mapGraspType;
+
+
+// Functions
 unsigned int shape(std::string strShape) {
   if(strShape == "cube") {
     return visualization_msgs::Marker::CUBE;
@@ -157,6 +162,16 @@ std::shared_ptr<object_definer::InteractiveObject> loadObject(std::string strObj
 }
 
 
+void setGraspType(std::shared_ptr<object_definer::InteractiveObject> ioObject, std::string strGraspType) {
+  g_mapGraspType[ioObject] = strGraspType;
+}
+
+
+std::string graspType(std::shared_ptr<object_definer::InteractiveObject> ioObject) {
+  return g_mapGraspType[ioObject];
+}
+
+
 std::shared_ptr<object_definer::InteractiveObject> makeHandle(std::string strHandleName) {
   std::shared_ptr<object_definer::InteractiveObject> ioHandleNew = std::make_shared<object_definer::InteractiveObject>(strHandleName);
   
@@ -205,6 +220,12 @@ std::shared_ptr<object_definer::InteractiveObject> makeHandle(std::string strHan
   ioHandleNew->changeControlMode(controlMode("MOVE_AXIS"));
   ioHandleNew->setMenuCheckBox(ioHandleNew->menuEntry("change_control_mode", "MOVE_AXIS").unMenuEntryID, 1);
   
+  unsigned int unGraspTypeMenu = ioHandleNew->addMenuEntry("Grasp Type", "grasp_type_menu");
+  ioHandleNew->addMenuEntry("Push", "change_grasp_type", "push", unGraspTypeMenu);
+  
+  setGraspType(ioHandleNew, "push");
+  ioHandleNew->setMenuCheckBox(ioHandleNew->menuEntry("change_grasp_type", "push").unMenuEntryID, 1);
+  
   return ioHandleNew;
 }
 
@@ -227,7 +248,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<object_definer::InteractiveObject> ioObject = loadObject(strObjectOWLFile);
   
   if(ioObject) {
-    ROS_INFO("Successfully loaded object file.");
+    //ROS_INFO("Successfully loaded object file.");
     ioObject->insertIntoServer(imsServer);
     
     std::list< std::shared_ptr<object_definer::InteractiveObject> > lstHandles;
@@ -258,6 +279,9 @@ int main(int argc, char** argv) {
 	    object_definer::OwlIndividual oiObject;
 	    oiObject.setID("&knowrob;" + ioObject->name());
 	    oiObject.setType("&knowrob;HumanScaleObject");
+	    
+	    oiObject.addDataProperty("knowrob:shape", "&xsd;string", shapeString(ioObject->shape()));
+	    
 	    oiObject.addDataProperty("knowrob:widthOfObject", "&xsd;double", str(ioObject->width()));
 	    oiObject.addDataProperty("knowrob:depthOfObject", "&xsd;double", str(ioObject->depth()));
 	    oiObject.addDataProperty("knowrob:heightOfObject", "&xsd;double", str(ioObject->height()));
@@ -266,9 +290,9 @@ int main(int argc, char** argv) {
 	      object_definer::OwlIndividual oiHandle;
 	      oiHandle.setID(ioObject->name() + "_" + ioHandle->name());
 	      oiHandle.setType("&knowrob;SemanticHandle");
+	      oiHandle.addContentProperty("knowrob:graspType", graspType(ioHandle));
 	      
-	      oiObject.addResourceProperty("knowrob:semanticHandle", oiObject.id());
-	      oiObject.addContentProperty("knowrob:graspType", "push");
+	      oiObject.addResourceProperty("knowrob:semanticHandle", oiHandle.id());
 	      
 	      object_definer::OwlIndividual oiHandlePose;
 	      oiHandlePose.setID(ioObject->name() + "_" + ioHandle->name() + "_pose");
@@ -308,7 +332,7 @@ int main(int argc, char** argv) {
 		}
 	      }
 	      
-	      oiObject.addResourceProperty("knowrob:handlePose", oiHandlePose.id());
+	      oiHandle.addResourceProperty("knowrob:handlePose", oiHandlePose.id());
 	      
 	      strFile += oiHandle.print();
 	      strFile += oiHandlePose.print();
@@ -371,6 +395,11 @@ int main(int argc, char** argv) {
 	  } else if(iocrResult.strCommand == "change_control_mode") {
 	    ioHandle->setMenuCheckBox(ioHandle->menuEntry(iocrResult.strCommand, controlModeString(ioHandle->controlMode())).unMenuEntryID, -1);
 	    ioHandle->changeControlMode(controlMode(iocrResult.strParameter));
+	    
+	    ioHandle->setMenuCheckBox(ioHandle->menuEntry(iocrResult.strCommand, iocrResult.strParameter).unMenuEntryID, 1);
+	  } else if(iocrResult.strCommand == "change_grasp_type") {
+	    ioHandle->setMenuCheckBox(ioHandle->menuEntry(iocrResult.strCommand, graspType(ioHandle)).unMenuEntryID, -1);
+	    setGraspType(ioHandle, iocrResult.strParameter);
 	    
 	    ioHandle->setMenuCheckBox(ioHandle->menuEntry(iocrResult.strCommand, iocrResult.strParameter).unMenuEntryID, 1);
 	  }
